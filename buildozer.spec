@@ -18,6 +18,16 @@ android.archs = armeabi-v7a
 android.permissions = INTERNET
 android.use_aapt2 = False
 android.ndk_api = 21
+# 为了指定 SDK/NDK 路径（如果自动检测有问题时）
+android.sdk_path = ~/.buildozer/android/platform/android-sdk
+# 可选：指定 NDK 路径（如果自己装的）
+# android.ndk_path = ~/.buildozer/android/platform/android-ndk-*
+
+# 指定 Build-Tools/平台版本（可根据 Workflow里sdkmanager对应版本添加）
+android.api = 33
+android.minapi = 21
+android.ndk_version = 25b
 
 [app:requirements]
 requirements = python3,kivy
+
