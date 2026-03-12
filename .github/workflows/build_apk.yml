@@ -10,21 +10,20 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装稳定依赖环境
+      - name: 安装纯净依赖
         run: |
           sudo apt update -y
           sudo apt install -y openjdk-17-jdk python3-pip git
-          # 配置国内镜像源
+          # 配置清华源
           pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          # 安装稳定版 Buildozer（1.5.0 兼容性最好）
+          # 锁定稳定版本：Buildozer 1.5.0 + Cython 0.29.36（兼容性最强）
           pip install buildozer==1.5.0
-          # 安装 Cython（构建必需）
           pip install cython==0.29.36
 
-      - name: 构建APK（带详细日志）
+      - name: 构建APK（单架构，无压力）
         run: buildozer android debug --verbose
 
-      - name: 上传APK文件
+      - name: 上传APK
         uses: actions/upload-artifact@v4
         with:
           name: GardenBaby-APK
