@@ -24,10 +24,10 @@ android.sdk_path = ~/.buildozer/android/platform/android-sdk
 # android.ndk_path = ~/.buildozer/android/platform/android-ndk-*
 
 # 指定 Build-Tools/平台版本（可根据 Workflow里sdkmanager对应版本添加）
-android.api = 33
 android.minapi = 21
 android.ndk_version = 25b
 
 [app:requirements]
 requirements = python3,kivy
+
 
