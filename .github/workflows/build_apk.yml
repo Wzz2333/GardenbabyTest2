@@ -1,42 +1,34 @@
-name: 终极打包APK
+name: Build Android APK
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v3
 
-      # 安装 Python 依赖（根据你项目实际情况）
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y python3-pip git zip unzip openjdk-17-jdk
 
-      - name: Upgrade pip, buildozer and p4a
-        run: |
-          pip install --upgrade pip
-          pip install --upgrade buildozer python-for-android
+    - name: Install Buildozer
+      run: |
+        pip install --upgrade pip
+        pip install buildozer cython
 
-      # 强制下载新版 Android cmdline-tools 并清理旧 SDK
-      - name: Clean old SDK and install cmdline-tools
-        run: |
-          rm -rf ~/.buildozer/android/platform/android-sdk
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d ~/.buildozer/android/platform/android-sdk/cmdline-tools
-          mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+    - name: Build APK
+      run: |
+        buildozer android debug
 
-      # 如需 NDK，可以用 sdkmanager 安装：可选
-      # sdkmanager --sdk_root=$ANDROID_SDK_ROOT "ndk;25.2.9519653"
-
-      # 使用 Buildozer 编译 APK
-      - name: Build APK
-        run: |
-          buildozer android debug --verbose
+    - name: Upload APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: android-apk
+        path: bin/*.apk
