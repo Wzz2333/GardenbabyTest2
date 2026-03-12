@@ -1,69 +1,40 @@
-name: 打包Python为APK（sdkmanager路径修复版）
-
+name: 终极打包APK
 on:
   workflow_dispatch:
-
 jobs:
   build-apk:
     runs-on: ubuntu-22.04
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-
-      - name: 缓存Buildozer环境
+      - uses: actions/checkout@v4
+      - name: 缓存环境
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
             ~/.buildozer
-          key: ${{ runner.os }}-buildozer-v3
-          restore-keys: |
-            ${{ runner.os }}-buildozer-
-
+          key: buildozer-final
       - name: 安装系统依赖
         run: |
           sudo apt update -y
-          sudo apt install -y openjdk-17-jdk python3-pip git unzip wget zlib1g-dev libncurses5-dev libtinfo5
-
-      - name: 安装Python稳定依赖
+          sudo apt install -y openjdk-17-jdk python3-pip git wget unzip libtinfo5 zlib1g-dev
+      - name: 安装稳定Python库
         run: |
           pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          pip install cython==0.29.36
-          pip install buildozer==1.5.0
-
-      - name: 手动配置Android SDK与sdkmanager（核心路径修复）
+          pip install cython==0.29.36 buildozer==1.5.0
+      - name: 修复Android SDK+自动许可
         run: |
-          # 定义SDK根目录（与buildozer完全一致）
           export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$ANDROID_HOME"
-          
-          # 1. 下载并安装commandlinetools（包含sdkmanager）
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
-          mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
-          
-          # 2. 【关键修复】创建Buildozer预期的旧版路径，复制sdkmanager过去
-          mkdir -p "$ANDROID_HOME/tools/bin"
-          cp "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/tools/bin/"
-          cp "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$ANDROID_HOME/tools/bin/"
-          cp "$ANDROID_HOME/cmdline-tools/latest/bin/lint" "$ANDROID_HOME/tools/bin/"
-          
-          # 3. 写入SDK许可证（绕过交互确认）
-          mkdir -p "$ANDROID_HOME/licenses"
-          echo "8933bad15afe2731585e87b337a1aec268514d7c" > "$ANDROID_HOME/licenses/android-sdk-license"
-          echo "d56f5187479451184e1cd729ef15c71a78b31eac" >> "$ANDROID_HOME/licenses/android-sdk-license"
-          
-          # 4. 将新旧路径都加入PATH，确保能找到
-          echo "export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
-
-      - name: 构建APK（带详细日志）
-        run: |
-          export PATH=$ANDROID_HOME/tools/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-          buildozer android debug --verbose --log-level=2
-
-      - name: 上传APK产物
+          mkdir -p $ANDROID_HOME/{tools/bin,cmdline-tools,licenses}
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O ct.zip
+          unzip -q ct.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          cp $ANDROID_HOME/cmdline-tools/latest/bin/* $ANDROID_HOME/tools/bin/
+          echo "8933bad15afe2731585e87b337a1aec268514d7c" > $ANDROID_HOME/licenses/android-sdk-license
+          echo "d56f5187479451184e1cd729ef15c71a78b31eac" >> $ANDROID_HOME/licenses/android-sdk-license
+      - name: 构建APK
+        run: buildozer android debug --verbose
+      - name: 上传APK
         uses: actions/upload-artifact@v4
         with:
-          name: GardenBabyTest-APK
+          name: MyApp-APK
           path: bin/*.apk
