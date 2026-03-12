@@ -1,4 +1,4 @@
-name: 打包Python为APK（终极许可版）
+name: 打包Python为APK（sdkmanager修复版）
 
 on:
   workflow_dispatch:
@@ -16,14 +16,14 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.buildozer
-          key: ${{ runner.os }}-buildozer-v1
+          key: ${{ runner.os }}-buildozer-v2
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
       - name: 安装系统依赖
         run: |
           sudo apt update -y
-          sudo apt install -y openjdk-17-jdk python3-pip git unzip zlib1g-dev libncurses5-dev libtinfo5
+          sudo apt install -y openjdk-17-jdk python3-pip git unzip wget zlib1g-dev libncurses5-dev libtinfo5
 
       - name: 安装Python稳定依赖
         run: |
@@ -31,19 +31,30 @@ jobs:
           pip install cython==0.29.36
           pip install buildozer==1.5.0
 
-      - name: 手动接受Android SDK许可证（关键修复！）
+      - name: 手动配置Android SDK与sdkmanager（核心修复）
         run: |
-          # 定义SDK路径（和buildozer一致）
+          # 定义SDK根目录（与buildozer一致）
           export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          # 创建许可证目录
+          mkdir -p "$ANDROID_HOME"
+          
+          # 1. 下载并安装commandlinetools（包含sdkmanager）
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d "$ANDROID_HOME/cmdline-tools"
+          mv "$ANDROID_HOME/cmdline-tools/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+          
+          # 2. 写入SDK许可证（绕过交互确认）
           mkdir -p "$ANDROID_HOME/licenses"
-          # 写入SDK许可字符串（官方认可的许可哈希）
           echo "8933bad15afe2731585e87b337a1aec268514d7c" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo "d56f5187479451184e1cd729ef15c71a78b31eac" >> "$ANDROID_HOME/licenses/android-sdk-license"
-          echo "2433357b963b4d2c9cecf08ff63f90d48e17cf10" >> "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          
+          # 3. 将sdkmanager加入PATH
+          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
 
       - name: 构建APK（带详细日志）
-        run: buildozer android debug --verbose --log-level=2
+        run: |
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          buildozer android debug --verbose --log-level=2
 
       - name: 上传APK产物
         uses: actions/upload-artifact@v4
