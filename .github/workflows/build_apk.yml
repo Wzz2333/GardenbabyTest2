@@ -1,29 +1,41 @@
-name: 打包Python为APK（终极版）
+name: 打包Python为APK（终极兜底版）
 
 on:
   workflow_dispatch:
 
 jobs:
   build-apk:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # 用更稳定的Ubuntu 22.04，避免新版兼容问题
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      - name: 安装纯净依赖（锁定版本）
+      # 缓存依赖，避免重复下载SDK/NDK，减少网络失败
+      - name: 缓存Buildozer环境
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.buildozer
+          key: ${{ runner.os }}-buildozer-v1
+          restore-keys: |
+            ${{ runner.os }}-buildozer-
+
+      - name: 安装系统依赖（补全缺失的系统库）
         run: |
           sudo apt update -y
-          sudo apt install -y openjdk-17-jdk python3-pip git
-          # 配置国内镜像（加速）
+          sudo apt install -y openjdk-17-jdk python3-pip git unzip zlib1g-dev libncurses5-dev libtinfo5
+
+      - name: 安装Python稳定依赖
+        run: |
           pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          # 🔴 锁定绝对稳定版本（不更新，不报错）
           pip install cython==0.29.36
           pip install buildozer==1.5.0
 
-      - name: 构建APK（单架构无压力）
-        run: buildozer android debug --verbose
+      - name: 构建APK（强制输出最详细日志）
+        run: buildozer android debug --verbose --log-level=2
 
-      - name: 上传APK文件
+      - name: 上传APK产物
         uses: actions/upload-artifact@v4
         with:
           name: GardenBabyTest-APK
