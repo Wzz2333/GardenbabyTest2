@@ -14,7 +14,7 @@ source.exclude_dirs = venv,build,.vscode
 
 # 安卓核心配置
 android.ndk = 25b
-android.sdk = 24
+android.api = 33
 android.api = 33
 android.ndk_api = 21
 android.build_tool = 30.0.3
@@ -31,4 +31,5 @@ android.debug = 1
 
 [buildozer]
 log_level = 2
+
 warn_on_root = 1
