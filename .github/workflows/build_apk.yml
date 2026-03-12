@@ -1,40 +1,42 @@
 name: 终极打包APK
+
 on:
   workflow_dispatch:
+
 jobs:
   build-apk:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: 缓存环境
-        uses: actions/cache@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 安装 Python 依赖（根据你项目实际情况）
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          path: |
-            ~/.cache/pip
-            ~/.buildozer
-          key: buildozer-final
-      - name: 安装系统依赖
+          python-version: '3.10'
+
+      - name: Upgrade pip, buildozer and p4a
         run: |
-          sudo apt update -y
-          sudo apt install -y openjdk-17-jdk python3-pip git wget unzip libtinfo5 zlib1g-dev
-      - name: 安装稳定Python库
+          pip install --upgrade pip
+          pip install --upgrade buildozer python-for-android
+
+      # 强制下载新版 Android cmdline-tools 并清理旧 SDK
+      - name: Clean old SDK and install cmdline-tools
         run: |
-          pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          pip install cython==0.29.36 buildozer==1.5.0
-      - name: 修复Android SDK+自动许可
+          rm -rf ~/.buildozer/android/platform/android-sdk
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d ~/.buildozer/android/platform/android-sdk/cmdline-tools
+          mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "build-tools;33.0.2" "platforms;android-33"
+
+      # 如需 NDK，可以用 sdkmanager 安装：可选
+      # sdkmanager --sdk_root=$ANDROID_SDK_ROOT "ndk;25.2.9519653"
+
+      # 使用 Buildozer 编译 APK
+      - name: Build APK
         run: |
-          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p $ANDROID_HOME/{tools/bin,cmdline-tools,licenses}
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip -O ct.zip
-          unzip -q ct.zip -d $ANDROID_HOME/cmdline-tools
-          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
-          cp $ANDROID_HOME/cmdline-tools/latest/bin/* $ANDROID_HOME/tools/bin/
-          echo "8933bad15afe2731585e87b337a1aec268514d7c" > $ANDROID_HOME/licenses/android-sdk-license
-          echo "d56f5187479451184e1cd729ef15c71a78b31eac" >> $ANDROID_HOME/licenses/android-sdk-license
-      - name: 构建APK
-        run: buildozer android debug --verbose
-      - name: 上传APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: MyApp-APK
-          path: bin/*.apk
+          buildozer android debug --verbose
