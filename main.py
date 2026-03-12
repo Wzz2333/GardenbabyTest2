@@ -1,3 +1,5 @@
+from kivy.config import Config
+Config.set("graphics", "multisamples", "0")
 import sys
 import os
 
@@ -1882,3 +1884,4 @@ class GardenBabyApp(App):
 
 if __name__ == '__main__':
     GardenBabyApp().run()
+
