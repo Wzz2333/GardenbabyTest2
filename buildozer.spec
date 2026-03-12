@@ -15,7 +15,6 @@ source.exclude_dirs = venv,build,.vscode
 # 安卓核心配置
 android.ndk = 25b
 android.api = 33
-android.api = 33
 android.ndk_api = 21
 android.build_tool = 30.0.3
 # 安卓权限（允许读取/写入文件）
@@ -33,3 +32,4 @@ android.debug = 1
 log_level = 2
 
 warn_on_root = 1
+
