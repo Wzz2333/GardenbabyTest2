@@ -10,7 +10,6 @@ source.include_exts = py,png,jpg,jpeg,kv,json,ttf
 version = 0.1
 
 requirements = python3,kivy,pillow
-source.include_exts = py,png,jpg,jpeg,ttf,json
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
@@ -37,4 +36,5 @@ log_level = 2
 
 log_level = 2
 warn_on_root = 1
+
 
