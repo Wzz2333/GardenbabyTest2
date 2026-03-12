@@ -4,6 +4,7 @@ title = 花园宝宝
 package.name = gardenbaby
 package.domain = org.gardenbaby
 version = 0.2.5
+android.accept_sdk_license = True
 
 # 源代码和资源配置（关键：包含所有文件类型）
 source.dir = .
@@ -32,4 +33,5 @@ android.debug = 1
 log_level = 2
 
 warn_on_root = 1
+
 
