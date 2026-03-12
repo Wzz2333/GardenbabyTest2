@@ -1,18 +1,28 @@
-name: 打包APK
-on: push: branches: [ main ]
+name: 打包Python为APK
+
+on:
+  workflow_dispatch:
+
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: 安装环境
-      run: |
-        sudo apt update
-        pip install buildozer cython
-    - name: 构建APK
-      run: buildozer -v android debug
-    - name: 上传APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: my-apk
-        path: bin/*.apk
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装依赖环境
+        run: |
+          sudo apt update -y
+          sudo apt install -y openjdk-17-jdk python3-pip
+          # 配置清华镜像源，解决下载超时
+          pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+          pip install buildozer
+
+      - name: 构建APK安装包
+        run: buildozer android debug
+
+      - name: 上传APK产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: Python-APK
+          path: bin/*.apk
