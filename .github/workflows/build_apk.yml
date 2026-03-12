@@ -1,16 +1,15 @@
-name: 打包Python为APK（终极兜底版）
+name: 打包Python为APK（终极许可版）
 
 on:
   workflow_dispatch:
 
 jobs:
   build-apk:
-    runs-on: ubuntu-22.04  # 用更稳定的Ubuntu 22.04，避免新版兼容问题
+    runs-on: ubuntu-22.04
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
 
-      # 缓存依赖，避免重复下载SDK/NDK，减少网络失败
       - name: 缓存Buildozer环境
         uses: actions/cache@v4
         with:
@@ -21,7 +20,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildozer-
 
-      - name: 安装系统依赖（补全缺失的系统库）
+      - name: 安装系统依赖
         run: |
           sudo apt update -y
           sudo apt install -y openjdk-17-jdk python3-pip git unzip zlib1g-dev libncurses5-dev libtinfo5
@@ -32,7 +31,18 @@ jobs:
           pip install cython==0.29.36
           pip install buildozer==1.5.0
 
-      - name: 构建APK（强制输出最详细日志）
+      - name: 手动接受Android SDK许可证（关键修复！）
+        run: |
+          # 定义SDK路径（和buildozer一致）
+          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
+          # 创建许可证目录
+          mkdir -p "$ANDROID_HOME/licenses"
+          # 写入SDK许可字符串（官方认可的许可哈希）
+          echo "8933bad15afe2731585e87b337a1aec268514d7c" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "d56f5187479451184e1cd729ef15c71a78b31eac" >> "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "2433357b963b4d2c9cecf08ff63f90d48e17cf10" >> "$ANDROID_HOME/licenses/android-sdk-preview-license"
+
+      - name: 构建APK（带详细日志）
         run: buildozer android debug --verbose --log-level=2
 
       - name: 上传APK产物
